@@ -42,26 +42,6 @@ final class ProductAttributesMapper implements ProductAttributesMapperInterface
 
     public function mapToChoices(ProductAttributeInterface $productAttribute): array
     {
-        $configuration = $productAttribute->getConfiguration();
-//        var_dump($productAttribute->getCode());
-        if (isset($configuration['choices']) && is_array($configuration['choices'])
-        ) {
-            $choices = [];
-//            var_dump('choices');
-            foreach ($configuration['choices'] as $singleValue => $val) {
-                $choice = $this->stringFormatter->formatToLowercaseWithoutSpaces($singleValue);
-                $label = $configuration['choices'][$singleValue][$this->localeContext->getLocaleCode()];
-                $choices[$label] = $choice;
-            }
-//            echo ' a ';
-            return $choices;
-        }
-
-//        if ($productAttribute->getStorageType() === 'boolean') {
-//            $choices['1'] = 1;
-//            return $choices;
-//        }
-
         /** @var QueryBuilder $queryBuilder */
         $queryBuilder = $this->productAttributeValueRepository->createQueryBuilder('o');
 
