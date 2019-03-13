@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace BitBag\SyliusElasticsearchPlugin\Form\Type\ChoiceMapper;
 
 use BitBag\SyliusElasticsearchPlugin\Formatter\StringFormatterInterface;
+use Doctrine\DBAL\Query\QueryBuilder;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Product\Model\ProductAttributeInterface;
 use Sylius\Component\Product\Model\ProductAttributeValueInterface;
@@ -41,12 +42,22 @@ final class ProductAttributesMapper implements ProductAttributesMapperInterface
 
     public function mapToChoices(ProductAttributeInterface $productAttribute): array
     {
-        $attributeValues = $this->productAttributeValueRepository->findBy(['attribute' => $productAttribute]);
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = $this->productAttributeValueRepository->createQueryBuilder('o');
+
+        $attributeValues = $queryBuilder
+            ->where('o.attribute = :attribute')
+            ->groupBy('o.'.$productAttribute->getStorageType())
+            ->setParameter(':attribute', $productAttribute)
+            ->getQuery()
+            ->getResult();
+//        $attributeValues = $this->productAttributeValueRepository->findBy(['attribute' => $productAttribute]);
         $choices = [];
         array_walk($attributeValues, function (ProductAttributeValueInterface $productAttributeValue) use (&$choices): void {
             $product = $productAttributeValue->getProduct();
 
             if (!$product->isEnabled()) {
+                unset($product);
                 return;
             }
 
@@ -67,6 +78,7 @@ final class ProductAttributesMapper implements ProductAttributesMapperInterface
                 $choices[$value] = $choice;
             }
         });
+        unset($attributeValues);
 
         return $choices;
     }
