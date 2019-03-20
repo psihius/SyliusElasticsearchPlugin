@@ -47,7 +47,10 @@ final class ProductAttributesFilterType extends AbstractFilterType
     public function buildForm(FormBuilderInterface $builder, array $attributes): void
     {
         foreach ($this->productAttributesContext->getAttributes() as $productAttribute) {
-            if (in_array($productAttribute->getCode(), $this->excludedAttributes)) continue;
+            if (in_array($productAttribute->getCode(), $this->excludedAttributes)) {
+                continue;
+            }
+
             $name = $this->attributeNameResolver->resolvePropertyName($productAttribute->getCode());
             $choices = $this->productAttributesMapper->mapToChoices($productAttribute);
 
