@@ -12,12 +12,11 @@ declare(strict_types=1);
 
 namespace BitBag\SyliusElasticsearchPlugin\Form\Type\ChoiceMapper;
 
+use BitBag\SyliusElasticsearchPlugin\EntityRepository\ProductAttributeValueRepositoryInterface;
 use BitBag\SyliusElasticsearchPlugin\Formatter\StringFormatterInterface;
-use Doctrine\DBAL\Query\QueryBuilder;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Product\Model\ProductAttributeInterface;
 use Sylius\Component\Product\Model\ProductAttributeValueInterface;
-use Sylius\Component\Product\Repository\ProductAttributeValueRepositoryInterface;
 
 final class ProductAttributesMapper implements ProductAttributesMapperInterface
 {
@@ -43,35 +42,24 @@ final class ProductAttributesMapper implements ProductAttributesMapperInterface
     public function mapToChoices(ProductAttributeInterface $productAttribute): array
     {
         $configuration = $productAttribute->getConfiguration();
-//        var_dump($productAttribute->getCode());
+
+        /**
+         * If we have choices configured, no need to query and group by product attribute values -
+         * they are predefined by the choices array
+         */
         if (isset($configuration['choices']) && is_array($configuration['choices'])
         ) {
             $choices = [];
-//            var_dump('choices');
             foreach ($configuration['choices'] as $singleValue => $val) {
                 $choice = $this->stringFormatter->formatToLowercaseWithoutSpaces($singleValue);
                 $label = $configuration['choices'][$singleValue][$this->localeContext->getLocaleCode()];
                 $choices[$label] = $choice;
             }
-//            echo ' a ';
             return $choices;
         }
 
-//        if ($productAttribute->getStorageType() === 'boolean') {
-//            $choices['1'] = 1;
-//            return $choices;
-//        }
+        $attributeValues = $this->productAttributeValueRepository->getUniqueAttributeValues($productAttribute);
 
-        /** @var QueryBuilder $queryBuilder */
-        $queryBuilder = $this->productAttributeValueRepository->createQueryBuilder('o');
-
-        $attributeValues = $queryBuilder
-            ->where('o.attribute = :attribute')
-            ->groupBy('o.'.$productAttribute->getStorageType())
-            ->setParameter(':attribute', $productAttribute)
-            ->getQuery()
-            ->getResult();
-//        $attributeValues = $this->productAttributeValueRepository->findBy(['attribute' => $productAttribute]);
         $choices = [];
         array_walk($attributeValues, function (ProductAttributeValueInterface $productAttributeValue) use (&$choices): void {
             $product = $productAttributeValue->getProduct();
